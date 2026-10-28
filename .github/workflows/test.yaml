@@ -1,0 +1,47 @@
+name: Run Playwright Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright pytest pytest-playwright python-dotenv pytest-html
+
+      - name: 安装 Playwright 浏览器
+        run: playwright install --with-deps chromium
+
+      - name: 运行测试
+        env:
+          BASE_URL: https://www.saucedemo.com
+          STANDARD_USER: standard_user
+          LOCKED_USER: locked_out_user
+          PROBLEM_USER: problem_user
+          PASSWORD: secret_sauce
+        run: pytest
+
+      - name: 上传测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: reports/
+          retention-days: 7
